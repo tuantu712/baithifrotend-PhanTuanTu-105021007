@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
-import { api } from '../hooks/useProducts';
+import { createOrder } from '../services/api';
 import { ArrowLeft, CheckCircle, CreditCard, Loader2, Phone, Mail, MapPin, User, FileText } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
@@ -53,6 +53,7 @@ export default function CheckoutPage() {
     const orderData = {
       customerName: data.fullName,
       customerPhone: data.phone,
+      customerEmail: data.email,
       customerAddress: data.address,
       items: items.map((item) => ({
         product: item.product._id,
@@ -62,10 +63,10 @@ export default function CheckoutPage() {
 
     try {
       // Gửi POST request lên API backend
-      const response = await api.post('/orders', orderData);
+      const resData = await createOrder(orderData);
       
       // Xử lý khi đặt hàng thành công
-      setCreatedOrderId(response.data?.data?._id || response.data?._id || 'ORDER-' + Math.floor(Math.random() * 1000000));
+      setCreatedOrderId(resData?.data?._id || resData?._id || 'ORDER-' + Math.floor(Math.random() * 1000000));
       setOrderSuccess(true);
       clearCart();
     } catch (err: any) {

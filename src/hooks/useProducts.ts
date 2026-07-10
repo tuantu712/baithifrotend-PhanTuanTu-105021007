@@ -1,39 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import type { Product } from '../store/cartStore';
-
-// Cấu hình Axios Instance với Interceptors
-export const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  timeout: 10000,
-});
-
-// Request Interceptor
-api.interceptors.request.use(
-  (config) => {
-    // Có thể cấu hình thêm Token Authorization ở đây nếu cần thiết
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    console.error('Axios Request Error Interceptor:', error);
-    return Promise.reject(error);
-  }
-);
-
-// Response Interceptor
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    console.error('Axios Response Error Interceptor:', error.response || error.message);
-    return Promise.reject(error);
-  }
-);
+import { fetchProducts, fetchProductById, fetchCategories } from '../services/api';
 
 export interface UseProductsFilters {
   categoryId?: string;
@@ -54,7 +21,7 @@ export const useProducts = (filters: UseProductsFilters) => {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchProducts = async () => {
+    const fetchProductsData = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -66,10 +33,9 @@ export const useProducts = (filters: UseProductsFilters) => {
         };
         if (categoryId) params.categoryId = categoryId;
 
-        const response = await api.get('/products', { params });
+        const resBody = await fetchProducts(params);
         
         if (isMounted) {
-          const resBody = response.data;
           let list: Product[] = [];
           
           if (resBody && typeof resBody === 'object') {
@@ -131,7 +97,7 @@ export const useProducts = (filters: UseProductsFilters) => {
       }
     };
 
-    fetchProducts();
+    fetchProductsData();
 
     return () => {
       isMounted = false;
@@ -154,9 +120,8 @@ export const useProductDetail = (id: string | undefined) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await api.get(`/products/${id}`);
+        const resBody = await fetchProductById(id);
         if (isMounted) {
-          const resBody = response.data;
           if (resBody && typeof resBody === 'object') {
             setProduct(resBody.data || resBody);
           } else {
@@ -201,11 +166,10 @@ export const useCategories = () => {
   useEffect(() => {
     let isMounted = true;
 
-    const fetchCategories = async () => {
+    const fetchCategoriesData = async () => {
       try {
-        const response = await api.get('/products/categories');
+        const resBody = await fetchCategories();
         if (isMounted) {
-          const resBody = response.data;
           setCategories(resBody.data || []);
         }
       } catch (err) {
@@ -225,7 +189,7 @@ export const useCategories = () => {
       }
     };
 
-    fetchCategories();
+    fetchCategoriesData();
 
     return () => {
       isMounted = false;
